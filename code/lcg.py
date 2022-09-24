@@ -6,7 +6,6 @@ class LCGState:
     def __init__(self, seed):
         self.state = seed % m
 
-    # TODO implement LCG generator
     def next(self):
         self.state = (a * self.state + c) % m
 
@@ -15,9 +14,8 @@ def generate_bytes(seed: int, length: int) -> bytes:
     lcg = LCGState(seed)
     for i in range(0, length):
         lcg.next()
-        result.append(lcg.state.to_bytes(4, 'big')[-2])
-
-    # TODO return byte array of given length from the generator
+        #result.append(lcg.state.to_bytes(4, 'big')[-2])
+        result.append((lcg.state & 0x0000ff00) >> 8)    #faster version
 
     return bytes(result)
 

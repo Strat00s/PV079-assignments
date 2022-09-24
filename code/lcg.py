@@ -2,22 +2,25 @@ a = 1664525
 c = 1013904223
 m = 2**32
 
+
 class LCGState:
     def __init__(self, seed):
         self.state = seed % m
 
     def next(self):
-        self.state = (a * self.state + c) % m
+        self.state = (a * self.state + c) % m   #skip first state
+        return self.state
+
 
 def generate_bytes(seed: int, length: int) -> bytes:
-    result = bytearray()
-    lcg = LCGState(seed)
-    for i in range(0, length):
-        lcg.next()
-        #result.append(lcg.state.to_bytes(4, 'big')[-2])
-        result.append((lcg.state & 0x0000ff00) >> 8)    #faster version
+    generator = LCGState(seed)
+    result    = bytearray()
+
+    for i in range(0, length): 
+        result.append((generator.next() & 0x0000ff00) >> 8) #get 2nd byte
 
     return bytes(result)
+
 
 if __name__ == "__main__":
     import sys

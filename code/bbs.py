@@ -4,26 +4,31 @@ q = 5340312989465584099871463955436845940135320986603689391470576059268871866982
 
 M = p * q
 
+
 class BBSState:
     def __init__(self, seed: int):
         seed **= 100
         self.state = (seed * seed) % M
 
     def generateBit(self):
-        self.state = (self.state * self.state) % M
-        return (0 if self.state % 2 == 0 else 1)
+        self.state = (self.state * self.state) % M  #skip first state
+        return (0 if self.state % 2 == 0 else 1)    #odd numbers have LSB 1, even 0; we want LSB
+
 
 def generate_bytes(seed: int, length: int) -> bytes:
     generator = BBSState(seed)
+    result    = bytearray()
 
-    result = bytearray()
     for i in range(0, length):
         byte = 0
-        for i in range(0, 8):
-            byte += generator.generateBit() << (7 - i % 8)
+        #create byte from subsequent generator calls
+        for j in range(0, 8):
+            byte += generator.generateBit() << (7 - j % 8)  #first bit from generator is MSB
+
         result.append(byte)
 
     return bytes(result)
+
 
 if __name__ == "__main__":
     import sys

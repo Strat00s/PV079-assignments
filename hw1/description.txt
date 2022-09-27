@@ -1,5 +1,5 @@
 a) Frequency test              - Tests the proportions of ones to zeros in the entire data sequence. Truly random data should contain 50% ones and 50% zeros (or really close to that amount).
-   Frequency test within block - Same as above, but intead of entire data sequence it checks in M-bit blocks.
+   Frequency test within block - Same as above, but instead of entire data sequence it checks in M-bit sized blocks.
 b) e = 11111111 00000010, n = 16, M = 8, N = 2
 c) Freq. test - p = 0.6170750... >= 0.01 -> sequence is random
    Block test - p = 0.0019304... <  0.01 -> sequence is non-random
@@ -7,5 +7,5 @@ c) Freq. test - p = 0.6170750... >= 0.01 -> sequence is random
 Answer to the second task of the second part of the assignment.
 Leave an empty line between answers to different tasks.
 a) Looking purely at the results, that would be X931. It's the only generator that passed all the tests.
-b) Kind of. The LCG was the fastest, but also failed all of the test. BBS was the slowest by far and yet it failed a single test. X931 on the other hand was about 2 times slower than LCG, but passed all the tests.
+b) Kind of. The LCG was the fastest, but also failed all of the test. BBS was the slowest by far and yet it failed a few sub-tests. X931 on the other hand was about 2 times slower than LCG, but passed all the tests.
    So yes, there is some kind of a relation between the time required and test results but it's not really a reliable metric. 

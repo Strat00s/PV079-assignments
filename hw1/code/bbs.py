@@ -12,7 +12,7 @@ class BBSState:
 
     def generateBit(self):
         self.state = (self.state * self.state) % M  #skip first state
-        return (0 if self.state % 2 == 0 else 1)    #odd numbers have LSB 1, even 0; we want LSB
+        return self.state & 1                       #get lsb
 
 
 def generate_bytes(seed: int, length: int) -> bytes:

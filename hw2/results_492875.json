@@ -1,0 +1,22 @@
+{
+    "D1"    : "Security mainly depends on capacity parameter, which determins the collision probability (and security is half the capacity bits).",
+    "m0"    : "0x69cb",
+    "c0"    : 448,
+    "hash0" : "0x94bd25c4cf6ca889126df37ddd9c36e6a9b28a4fe15cc3da6debcdd7",
+
+    "D2" : "The reason for the . . " ,
+    "m1" : "0x414a4bc . . . " ,
+    "m2" : "0x212cdef . . . " ,
+    "c12" : 0 ,
+    "hash12" : "0xa8e8 . . . " ,
+
+    "D3" : "For a fixed m3 I used brute−force to find m4 . . . " ,
+    "m3" : "0x43ed3bc . . . " ,
+    "m4" : "0xe1cc75d . . . " ,
+    "c34" : 64 ,
+    "hash34" : "0xbd4ac . . . " ,
+
+    "max" : 840 ,
+    "min" : 760 ,
+    "avg" : 140.05
+}

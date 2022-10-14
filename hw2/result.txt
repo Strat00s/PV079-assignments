@@ -1,0 +1,11 @@
+3. ###########
+D3 = I created a random message of length 4 where c = 32. Than I created a hash of this massege nad store it.
+    In a cycle a create a new hash from the previosly created one and store its value until we find that
+    a newly created hash is identical with one of the hashes that is stored already in a memory.
+
+    I generate the message randomly so this is just an example.
+
+m3 = 35CE14E6
+m4 = 0DBF82E8
+c = 32
+hash34 = 6E9ED255

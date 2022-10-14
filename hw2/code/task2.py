@@ -8,8 +8,11 @@
 # and related or neighboring rights to the source code in this file.
 # http://creativecommons.org/publicdomain/zero/1.0/
 
+#Entire Keccak implementation taken from: https://github.com/XKCP/XKCP/blob/master/Standalone/CompactFIPS202/Python/CompactFIPS202_numpy.py
+
 import numpy as np
 import string
+
 
 KECCAK_BYTES = 200
 KECCAK_LANES = 25
@@ -76,10 +79,11 @@ def KeccakF1600(state):
         # iota_step:
         # Exclusive-or first lane of state with round constant
         state[0, 0] ^= IOTA_CONSTANTS[round_num]
-    
+
     return bytearray(state.tobytes(order='F'))
 
 def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
+    states = []
     outputBytes = bytearray()
     state = bytearray([0 for i in range(200)])
     rateInBytes = rate//8
@@ -87,6 +91,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
     if (((rate + capacity) != 1600) or ((rate % 8) != 0)):
         return
     inputOffset = 0
+
     # === Absorb all the input blocks ===
     while(inputOffset < len(inputBytes)):
         blockSize = min(len(inputBytes)-inputOffset, rateInBytes)
@@ -95,13 +100,18 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         inputOffset = inputOffset + blockSize
         if (blockSize == rateInBytes):
             state = KeccakF1600(state)
+            states.append(state)                                    #store state
             blockSize = 0
+
     # === Do the padding and switch to the squeezing phase ===
     state[blockSize] = state[blockSize] ^ delimitedSuffix
     if (((delimitedSuffix & 0x80) != 0) and (blockSize == (rateInBytes-1))):
         state = KeccakF1600(state)
+        states.append(state)
     state[rateInBytes-1] = state[rateInBytes-1] ^ 0x80
     state = KeccakF1600(state)
+    states.append(state)                                            #store state
+
     # === Squeeze out all the output blocks ===
     while(outputByteLen > 0):
         blockSize = min(outputByteLen, rateInBytes)
@@ -109,29 +119,13 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         outputByteLen = outputByteLen - blockSize
         if (outputByteLen > 0):
             state = KeccakF1600(state)
-    return outputBytes
+    return outputBytes, states
 
-def SHAKE128(inputBytes, outputByteLen):
-    return Keccak(1344, 256, inputBytes, 0x1F, outputByteLen)
-
-def SHAKE256(inputBytes, outputByteLen):
-    return Keccak(1088, 512, inputBytes, 0x1F, outputByteLen)
-
-def SHA3_224(inputBytes):
-    return Keccak(1152, 448, inputBytes, 0x06, 224//8)
-
-def SHA3_256(inputBytes):
-    return Keccak(1088, 512, inputBytes, 0x06, 256//8)
-
-def SHA3_384(inputBytes):
-    return Keccak(832, 768, inputBytes, 0x06, 384//8)
-
-def SHA3_512(inputBytes):
-    return Keccak(576, 1024, inputBytes, 0x06, 512//8)
 
 def CUSTOM_KECCAK(inputBytes):
-    capacity = 8
-    return Keccak(1600 - capacity, capacity, inputBytes, 0x06, 128//8)
+    capacity = 0
+    return Keccak(1600 - capacity, capacity, inputBytes, 0x06, 1600//8)
+
 
 def printHex(byte_data):
     for byte in byte_data:
@@ -139,15 +133,20 @@ def printHex(byte_data):
     print("")
 
 
-def finder(f, x0):
-    hashes = []
-    i = 0
-    while x0 not in hashes:
-        i += 1
-        hashes.append(x0)
-        x0 = f(x0)
-    print(x0)
-    print(i)
+ms1 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+#ms1 = ms1 + bytes("\x00" * (400 - len(ms1)), "utf-8")  #uncoment for smaller message size
+ms1_hash, a_states = CUSTOM_KECCAK(ms1)
+ms2 = a_states[0]
+ms2_hash, a_states = CUSTOM_KECCAK(ms2)
+
+print("Message 1:\n")
+printHex(ms1)
+printHex(ms1_hash)
+
+print("")
+
+print("Message 2:\n")
+printHex(ms2)
+printHex(ms2_hash)
 
 
-finder(CUSTOM_KECCAK, b"3797bf0afbbfca4a7bbba7602a2b552746876517a7f9b7ce2db0ae7b")

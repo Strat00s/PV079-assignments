@@ -87,6 +87,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
     state = bytearray([0 for i in range(200)])
     rateInBytes = rate//8
     blockSize = 0
+    a_state = 0
     if (((rate + capacity) != 1600) or ((rate % 8) != 0)):
         return
     inputOffset = 0
@@ -100,6 +101,8 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         if (blockSize == rateInBytes):
             state = KeccakF1600(state)
             blockSize = 0
+
+    a_state = state
 
     # === Do the padding and switch to the squeezing phase ===
     state[blockSize] = state[blockSize] ^ delimitedSuffix
@@ -115,8 +118,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         outputByteLen = outputByteLen - blockSize
         if (outputByteLen > 0):
             state = KeccakF1600(state)
-    return outputBytes
-
+    return outputBytes, a_state
 
 def CUSTOM_KECCAK(inputBytes, capacity, hash_len):
     #capacity = 32
@@ -129,32 +131,86 @@ def printHex(byte_data):
     print("")
 
 
-ms      = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-hash = CUSTOM_KECCAK(ms, 32, 32)
-hashes   = [hash]
-ms      = hash
+#byte array xoring taken from: https://programming-idioms.org/idiom/238/xor-byte-arrays/4146/python
+def arrayXor(array_a, array_b):
+    return bytes([a ^ b for a, b in zip(array_a, array_b)])
+
+
+CAPACITY = 32
+HASH_LEN = 1600 - CAPACITY
+
+ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
+c_list      = list()
+states      = list()
+hashes      = list()
+messages    = list()
 
 while True:
-    hash = CUSTOM_KECCAK(ms, 32, 32)
-    if hash in hashes:
-        print(f"Found same hash!")
+    hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
+    c = state[-(CAPACITY//8):]
+
+    if c in c_list:
+        print(f"Found same state!")
         break
+    
     hashes.append(hash)
+    c_list.append(c)
+    states.append(state)
+    messages.append(ms)
     ms = hash
-    print(len(hashes))
 
 
-print("Message 1:\n")
-printHex(hashes[hashes.index(hash) - 1])
+#print("Message 1:\n")
+index = c_list.index(c)
+#printHex(messages[index])
+#printHex(hashes[index])
+#printHex(c_list[index])
+#printHex(states[index])
+#
+#
+#print("")
+#
+#print("Message 2:\n")
+#printHex(ms)
+#printHex(hash)
+#printHex(c)
+#printHex(state)
+
+
+ms1    = messages[index]
+state1 = states[index]
+ms2    = ms
+state2 = state
+
+#create some suffix for first message
+suffix1 = b'\x37'
+suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
+#print("suffix1:")
+#printHex(suffix1)
+
+#xor state of first message with random message -> internal state after second xor
+new_state = arrayXor(suffix1, state1)
+#print("New state:")
+#printHex(new_state)
+
+#xor result ^ with state from second message -> what we need to xor the second message state with
+suffix2 = arrayXor(new_state, state2)
+#print("suffix2:")
+#printHex(suffix2)
+
+ms1 = ms1 + suffix1
+ms2 = ms  + suffix2
+
+print("Results:")
+print("msg1:")
+hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+printHex(ms1)
 printHex(hash)
 
 print("")
 
-print("Message 2:\n")
-printHex(ms)
+print("msg2:")
+hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+printHex(ms2)
 printHex(hash)
-
-#printHex(CUSTOM_KECCAK(b'\xe7\xa3', 32, 16))
-#printHex(CUSTOM_KECCAK(b'\x6d\x70', 32, 16))
-
 

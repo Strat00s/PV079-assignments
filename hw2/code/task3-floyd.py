@@ -137,7 +137,7 @@ def arrayXor(array_a, array_b):
     return bytes([a ^ b for a, b in zip(array_a, array_b)])
 
 
-CAPACITY = 32
+CAPACITY = 40
 HASH_LEN = 1600 - CAPACITY
 
 ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
@@ -147,6 +147,40 @@ hashes      = list()
 messages    = list()
 
 c_set = [[], []]
+
+
+#Found same state???
+#676320
+#477900
+#b'7ea7e86bf5'
+#b'7ea7e86bf5'
+#done
+#37656137653836626635
+#33313431383362353866
+
+#msg1
+#19a5afa72cbb3a51f74314286eb55b27ddd784134a45caff0eb7729868e931ad3506b05b57e6c12a7296ea5c5f01487185b8aba60d05bb569453d6d21dee315c006ee448ad7e681468f078186a1f8edf9786bba00538230b33f115466045d3cf1febb1bbf53badb2b3201b13c13414359bc591ae872a3fc2962a9c5dae7ddd98fb50a7c2245637fef97d1387d7134e84588a95e1bc463081535efa7994b1227901904021fd85dc7502417ad877a3c20662b2f5bf52a25393cd68ecf813263ecf6a6d79
+
+#msg2
+#117890d0985fb8aace5cd6758eeaedae98c5eb9dfdd7cd4935ee177db4c1d8e2cb2f72651bbf4a27e541e2e72e81fea92028a524e0a7c15066a2843a571f503d49e650396b9a906fd9c460262cbed84d84291e51bbb413e46931688a24a74b98714805a0a265520d1558de79698295731f3d22c0b5940c59d9b1db1502658b214dd4948fed7ab639928bf5e2b89102cf96054b03420f879af5801069f58e45d6fd03c10a30c2a7f197443fdc32e62e95125d9bdabee3dac2c1391a8f1c1343d8097008
+
+for i in range(676321):
+    if i % 1000 == 0:
+        print(i)
+    ms, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
+    if i == 477900 - 3 or i == 477900 - 2 or i == 477900 - 1 or i == 477900 or i == 477900 + 1 or i == 477900 + 2 or i == 477900 + 3:
+        printHex(ms)
+        printHex(state)
+        print("")
+    if i == 676320 - 3 or i == 676320 - 2 or i == 676320 - 1 or i == 676320 or i == 676320 + 1 or i == 676320 + 2 or i == 676320 + 3:
+        printHex(ms)
+        printHex(state)
+        print("")
+printHex(ms)
+printHex(state)
+print("")
+
+exit(0)
 
 
 #tortoise, t_state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
@@ -197,7 +231,7 @@ print("done")
 printHex(h_state)
 printHex(t_state)
 
-
+exit(0)
 
 while True:
     hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)

@@ -12,6 +12,7 @@
 
 import numpy as np
 import string
+import binascii
 
 
 KECCAK_BYTES = 200
@@ -88,6 +89,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
     rateInBytes = rate//8
     blockSize = 0
     a_state = 0
+    input_copy = bytearray(inputBytes)
     if (((rate + capacity) != 1600) or ((rate % 8) != 0)):
         return
     inputOffset = 0
@@ -102,7 +104,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
             state = KeccakF1600(state)
             blockSize = 0
 
-    a_state = state.copy()
+    a_state = state
 
     # === Do the padding and switch to the squeezing phase ===
     state[blockSize] = state[blockSize] ^ delimitedSuffix
@@ -118,7 +120,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         outputByteLen = outputByteLen - blockSize
         if (outputByteLen > 0):
             state = KeccakF1600(state)
-    return outputBytes, a_state
+    return outputBytes, a_state, input_copy
 
 def CUSTOM_KECCAK(inputBytes, capacity, hash_len):
     #capacity = 32
@@ -136,95 +138,71 @@ def arrayXor(array_a, array_b):
     return bytes([a ^ b for a, b in zip(array_a, array_b)])
 
 
-CAPACITY = 32
+CAPACITY = 40
 HASH_LEN = 1600 - CAPACITY
 
 ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
-c_list      = list()
-states      = list()
-hashes      = list()
-messages    = list()
+
+
+#o_tortoise = ms
+#o_hare = ms
+o_h1 = ms
+ms_dict = dict()
+
+print(f"Capacity: {CAPACITY}")
 
 while True:
-    hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-    c = state[-(CAPACITY//8):]
+    data = []
+    data.append(CUSTOM_KECCAK(o_h1,        CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
 
-    #print(len(c_list))
-    #printHex(c)
+    for item in reversed(data):
+        c = binascii.hexlify(item[1][-(CAPACITY//8):])
+        if c in ms_dict and item[2] != ms_dict[c]:
+            print("Found same state???")
+            ms2 = item[2]
+            ms1 = ms_dict[c]
+            break
+        else:
+            ms_dict[c] = item[2]
+    else:
+        o_h1 = data[-1][0]
+        continue
+    break
 
-    if c in c_list:
-        print(f"Found same state!")
-        break
-    
-    hashes.append(hash)
-    c_list.append(c)
-    states.append(state)
-    messages.append(ms)
-    ms = hash
+state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[1]
+state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[1]
 
-
-#print("Message 1:\n")
-index = c_list.index(c)
-#printHex(messages[index])
-#printHex(hashes[index])
-#printHex(c_list[index])
-#printHex(states[index])
-#
-#
-#print("")
-#
-#print("Message 2:\n")
-#printHex(ms)
-#printHex(hash)
-#printHex(c)
-#printHex(state)
-
-
-ms1    = messages[index]
-state1 = states[index]
-ms2    = ms
-state2 = state
-
-ms1 = messages[index]
-ms2 = ms
-tmp, state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
-tmp, state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
-
-
-printHex(ms1)
-printHex(ms2)
-printHex(state1)
-printHex(state2)
 
 #create some suffix for first message
 suffix1 = b'\x37'
 suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
-#print("suffix1:")
-#printHex(suffix1)
 
 #xor state of first message with random message -> internal state after second xor
 new_state = arrayXor(suffix1, state1)
-#print("New state:")
-#printHex(new_state)
 
 #xor result ^ with state from second message -> what we need to xor the second message state with
 suffix2 = arrayXor(new_state, state2)
-#print("suffix2:")
-#printHex(suffix2)
+
+new_state = arrayXor(suffix2, state2)
 
 ms1 = ms1 + suffix1
 ms2 = ms2 + suffix2
 
 print("Results:")
 print("msg1:")
-hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+hash = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[0]
 printHex(ms1)
 printHex(hash)
 
 print("")
 
 print("msg2:")
-hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+hash = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[0]
 printHex(ms2)
 printHex(hash)
 

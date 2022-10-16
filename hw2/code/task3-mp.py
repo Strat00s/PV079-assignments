@@ -1,3 +1,12 @@
+from multiprocessing import Pool
+import random
+
+def multiprocessing_func(x):
+    result = 0
+    for i in x:
+        result += i
+    return result
+
 # -*- coding: utf-8 -*-
 # Implementation by Gilles Van Assche, hereby denoted as "the implementer".
 #
@@ -13,7 +22,6 @@
 import numpy as np
 import string
 import binascii
-import multiprocessing, ctypes
 
 
 KECCAK_BYTES = 200
@@ -127,114 +135,144 @@ def CUSTOM_KECCAK(inputBytes, capacity, hash_len):
     return Keccak(1600 - capacity, capacity, inputBytes, 0x06, hash_len//8)
 
 
+def printHex(byte_data):
+    for byte in byte_data:
+        print(f"{byte:02x}", end="")
+    print("")
 
-CAPACITY = 32
+
+#byte array xoring taken from: https://programming-idioms.org/idiom/238/xor-byte-arrays/4146/python
+def arrayXor(array_a, array_b):
+    return bytes([a ^ b for a, b in zip(array_a, array_b)])
+
+
+def multiprocessing_func(data):
+    h_c = binascii.hexlify(data[1][-(CAPACITY//8):])
+    if h_c in data[2]:
+        ms1 = data[0]
+        ms2 = data[2][h_c]
+        return [ms1, ms2], h_c, True
+
+    return [data[0]], h_c, False
+
+
+
+CAPACITY = 64
 HASH_LEN = 1600 - CAPACITY
 
-ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
-c_list      = list()
-states      = list()
-hashes      = list()
-messages    = list()
 
-c_set = [[], []]
+if __name__=='__main__':
+    NPROC = 6 #Numer of available processors
+    p = Pool(NPROC)
 
+    ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
+    #o_tortoise = ms
+    #o_hare = ms
+    o_h1 = ms
+    ms_dict = dict()
 
-#tortoise, t_state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
-#tmp, tmp_state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-#hare, h_state =     CUSTOM_KECCAK(tmp, CAPACITY, HASH_LEN)
-#t_i = 0
-t_i = 1
-h_i = 2
-tortoise = ms
-hare = ms
+    print(f"Capacity: {CAPACITY}")
 
-while True:
-    #t_state[-(CAPACITY//8):] != h_state[-(CAPACITY//8):]:
-    
-    tortoise, t_state = CUSTOM_KECCAK(tortoise, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
-    tmp, tmp_state    = CUSTOM_KECCAK(hare, CAPACITY, HASH_LEN)
-    hare, h_state     = CUSTOM_KECCAK(tmp, CAPACITY, HASH_LEN)
+    while True:
+        h1, h1_state = CUSTOM_KECCAK(o_h1, CAPACITY, HASH_LEN)
+        h2, h2_state = CUSTOM_KECCAK(h1, CAPACITY, HASH_LEN)
+        h3, h3_state = CUSTOM_KECCAK(h2, CAPACITY, HASH_LEN)
+        h4, h4_state = CUSTOM_KECCAK(h3, CAPACITY, HASH_LEN)
+        h5, h5_state = CUSTOM_KECCAK(h4, CAPACITY, HASH_LEN)
+        h6, h6_state = CUSTOM_KECCAK(h5, CAPACITY, HASH_LEN)
 
-    t_state = binascii.hexlify(t_state[-(CAPACITY//8):])
-    h_state = binascii.hexlify(h_state[-(CAPACITY//8):])
+        chunks = [
+            [o_h1, h1_state, ms_dict],
+            [h1,   h2_state, ms_dict],
+            [h2,   h3_state, ms_dict],
+            [h3,   h4_state, ms_dict],
+            [h4,   h5_state, ms_dict],
+            [h5,   h6_state, ms_dict]
+        ]
 
-    c_set[0].append(h_i)
-    if h_state in c_set[1]:
-        print("Found same state???")
-        print(h_i)
-        print(c_set[0][c_set[1].index(h_state)])
-        print(h_state)
-        print(c_set[1][c_set[1].index(h_state)])
-        break
-    c_set[1].append(h_state)
+        r_list = []
+        for result in p.map(multiprocessing_func, chunks):
+            data, h_c, rc = result
+            r_list.append([data[0], h_c])
+            if rc == True:
+                p.terminate()
+                p.close()
+                print("Done???")
+                print("Messages:")
+                printHex(data[0])
+                printHex(data[1])
+                hash, state = CUSTOM_KECCAK(data[0], CAPACITY, HASH_LEN)
+                printHex(state)
+                hash, state = CUSTOM_KECCAK(data[1], CAPACITY, HASH_LEN)
+                printHex(state)
+                print("HC:")
+                printHex(h_c)
+                break
+        
+        #TODO test each other
+        msgs=[]
+        for item in r_list:
+            if item[0] not in msgs:
+                msgs.append(item[0])
+                ms_dict[item[1]] = item[0]
+            else:
+                print("Duplicates!!!",end=' ')
+                print(r_list[1])
+                p.close()
+                break
 
-    if t_i not in c_set[0]:
-        c_set[0].append(t_i)
-        if t_state in c_set[1]:
-            print("Found same state???")
-            print(t_i)
-            print(c_set[0][c_set[1].index(t_state)])
-            print(t_state)
-            print(c_set[1][c_set[1].index(t_state)])
-            break
-        c_set[1].append(t_state)
+        o_h1 = h6
 
-    t_i += 1
-    h_i += 2
+    exit(0)
+    print("done")
+    printHex(ms1)
+    printHex(ms2)
 
+    tmp, state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+    tmp, state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
 
-print("done")
-printHex(h_state)
-printHex(t_state)
+    print("state1")
+    printHex(state1)
+    print("state2")
+    printHex(state2)
 
-exit(0)
+    #ms1    = messages[index]
+    #state1 = states[index]
+    #ms2    = ms
+    #state2 = state
 
-while True:
-    hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-    c = state[-(CAPACITY//8):]
+    #create some suffix for first message
+    suffix1 = b'\x37'
+    suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
+    print("suffix1:")
+    printHex(suffix1)
 
-    if c in c_list:
-        print(f"Found same state!")
-        break
-    
-    hashes.append(hash)
-    c_list.append(c)
-    states.append(state)
-    messages.append(ms)
-    ms = hash
+    #xor state of first message with random message -> internal state after second xor
+    new_state = arrayXor(suffix1, state1)
+    print("New state:")
+    printHex(new_state)
 
+    #xor result ^ with state from second message -> what we need to xor the second message state with
+    suffix2 = arrayXor(new_state, state2)
+    print("suffix2:")
+    printHex(suffix2)
 
+    new_state = arrayXor(suffix2, state2)
+    print("new state:")
+    printHex(new_state)
 
-index = c_list.index(c)
-ms1    = messages[index]
-state1 = states[index]
-ms2    = ms
-state2 = state
+    ms1 = ms1 + suffix1
+    ms2 = ms2 + suffix2
 
-#create some suffix for first message
-suffix1 = b'\x37'
-suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
+    print("Results:")
+    print("msg1:")
+    hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+    printHex(ms1)
+    printHex(hash)
 
-#xor state of first message with random message -> internal state after second xor
-new_state = arrayXor(suffix1, state1)
+    print("")
 
-#xor result ^ with state from second message -> what we need to xor the second message state with
-suffix2 = arrayXor(new_state, state2)
-
-ms1 = ms1 + suffix1
-ms2 = ms  + suffix2
-
-print("Results:")
-print("msg1:")
-hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
-printHex(ms1)
-printHex(hash)
-
-print("")
-
-print("msg2:")
-hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
-printHex(ms2)
-printHex(hash)
-
+    print("msg2:")
+    hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+    printHex(ms2)
+    printHex(hash)

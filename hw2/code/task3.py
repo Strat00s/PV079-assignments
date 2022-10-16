@@ -102,7 +102,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
             state = KeccakF1600(state)
             blockSize = 0
 
-    a_state = state
+    a_state = state.copy()
 
     # === Do the padding and switch to the squeezing phase ===
     state[blockSize] = state[blockSize] ^ delimitedSuffix
@@ -149,6 +149,9 @@ while True:
     hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
     c = state[-(CAPACITY//8):]
 
+    #print(len(c_list))
+    #printHex(c)
+
     if c in c_list:
         print(f"Found same state!")
         break
@@ -182,6 +185,17 @@ state1 = states[index]
 ms2    = ms
 state2 = state
 
+ms1 = messages[index]
+ms2 = ms
+tmp, state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+tmp, state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+
+
+printHex(ms1)
+printHex(ms2)
+printHex(state1)
+printHex(state2)
+
 #create some suffix for first message
 suffix1 = b'\x37'
 suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
@@ -199,7 +213,7 @@ suffix2 = arrayXor(new_state, state2)
 #printHex(suffix2)
 
 ms1 = ms1 + suffix1
-ms2 = ms  + suffix2
+ms2 = ms2 + suffix2
 
 print("Results:")
 print("msg1:")

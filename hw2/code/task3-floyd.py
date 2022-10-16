@@ -89,6 +89,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
     rateInBytes = rate//8
     blockSize = 0
     a_state = 0
+    input_copy = bytearray(inputBytes)
     if (((rate + capacity) != 1600) or ((rate % 8) != 0)):
         return
     inputOffset = 0
@@ -119,7 +120,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         outputByteLen = outputByteLen - blockSize
         if (outputByteLen > 0):
             state = KeccakF1600(state)
-    return outputBytes, a_state
+    return outputBytes, a_state, input_copy
 
 def CUSTOM_KECCAK(inputBytes, capacity, hash_len):
     #capacity = 32
@@ -141,143 +142,156 @@ CAPACITY = 40
 HASH_LEN = 1600 - CAPACITY
 
 ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
-c_list      = list()
-states      = list()
-hashes      = list()
-messages    = list()
-
-c_set = [[], []]
 
 
-#Found same state???
-#676320
-#477900
-#b'7ea7e86bf5'
-#b'7ea7e86bf5'
-#done
-#37656137653836626635
-#33313431383362353866
+#o_tortoise = ms
+#o_hare = ms
+o_h1 = ms
+ms_dict = dict()
 
-#msg1
-#19a5afa72cbb3a51f74314286eb55b27ddd784134a45caff0eb7729868e931ad3506b05b57e6c12a7296ea5c5f01487185b8aba60d05bb569453d6d21dee315c006ee448ad7e681468f078186a1f8edf9786bba00538230b33f115466045d3cf1febb1bbf53badb2b3201b13c13414359bc591ae872a3fc2962a9c5dae7ddd98fb50a7c2245637fef97d1387d7134e84588a95e1bc463081535efa7994b1227901904021fd85dc7502417ad877a3c20662b2f5bf52a25393cd68ecf813263ecf6a6d79
-
-#msg2
-#117890d0985fb8aace5cd6758eeaedae98c5eb9dfdd7cd4935ee177db4c1d8e2cb2f72651bbf4a27e541e2e72e81fea92028a524e0a7c15066a2843a571f503d49e650396b9a906fd9c460262cbed84d84291e51bbb413e46931688a24a74b98714805a0a265520d1558de79698295731f3d22c0b5940c59d9b1db1502658b214dd4948fed7ab639928bf5e2b89102cf96054b03420f879af5801069f58e45d6fd03c10a30c2a7f197443fdc32e62e95125d9bdabee3dac2c1391a8f1c1343d8097008
-
-for i in range(676321):
-    if i % 1000 == 0:
-        print(i)
-    ms, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-    if i == 477900 - 3 or i == 477900 - 2 or i == 477900 - 1 or i == 477900 or i == 477900 + 1 or i == 477900 + 2 or i == 477900 + 3:
-        printHex(ms)
-        printHex(state)
-        print("")
-    if i == 676320 - 3 or i == 676320 - 2 or i == 676320 - 1 or i == 676320 or i == 676320 + 1 or i == 676320 + 2 or i == 676320 + 3:
-        printHex(ms)
-        printHex(state)
-        print("")
-printHex(ms)
-printHex(state)
-print("")
-
-exit(0)
-
-
-#tortoise, t_state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
-#tmp, tmp_state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-#hare, h_state =     CUSTOM_KECCAK(tmp, CAPACITY, HASH_LEN)
-#t_i = 0
-t_i = 1
-h_i = 2
-tortoise = ms
-hare = ms
+print(f"Capacity: {CAPACITY}")
 
 while True:
-    #t_state[-(CAPACITY//8):] != h_state[-(CAPACITY//8):]:
-    
-    tortoise, t_state = CUSTOM_KECCAK(tortoise, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
-    tmp, tmp_state    = CUSTOM_KECCAK(hare, CAPACITY, HASH_LEN)
-    hare, h_state     = CUSTOM_KECCAK(tmp, CAPACITY, HASH_LEN)
+    data = []
+    data.append(CUSTOM_KECCAK(o_h1,        CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
+    data.append(CUSTOM_KECCAK(data[-1][0], CAPACITY, HASH_LEN))
 
-    t_state = binascii.hexlify(t_state[-(CAPACITY//8):])
-    h_state = binascii.hexlify(h_state[-(CAPACITY//8):])
-
-    c_set[0].append(h_i)
-    if h_state in c_set[1]:
-        print("Found same state???")
-        print(h_i)
-        print(c_set[0][c_set[1].index(h_state)])
-        print(h_state)
-        print(c_set[1][c_set[1].index(h_state)])
-        break
-    c_set[1].append(h_state)
-
-    if t_i not in c_set[0]:
-        c_set[0].append(t_i)
-        if t_state in c_set[1]:
+    for item in reversed(data):
+        c = binascii.hexlify(item[1][-(CAPACITY//8):])
+        if c in ms_dict and item[2] != ms_dict[c]:
             print("Found same state???")
-            print(t_i)
-            print(c_set[0][c_set[1].index(t_state)])
-            print(t_state)
-            print(c_set[1][c_set[1].index(t_state)])
+            ms2 = item[2]
+            ms1 = ms_dict[c]
             break
-        c_set[1].append(t_state)
+        else:
+            ms_dict[c] = item[2]
+    else:
+        o_h1 = data[-1][0]
+        continue
+    break
 
-    t_i += 1
-    h_i += 2
+
+#    #tortoise, t_state = CUSTOM_KECCAK(o_tortoise, CAPACITY, HASH_LEN) # f(ms) is the element/node next to ms.
+#    #tmp, tmp_state    = CUSTOM_KECCAK(o_hare, CAPACITY, HASH_LEN)
+#    #hare, h_state     = CUSTOM_KECCAK(tmp, CAPACITY, HASH_LEN)
+#
+#
+#    h1_c = binascii.hexlify(h1_state[-(CAPACITY//8):])
+#    h2_c = binascii.hexlify(h2_state[-(CAPACITY//8):])
+#    h3_c = binascii.hexlify(h3_state[-(CAPACITY//8):])
+#    h4_c = binascii.hexlify(h4_state[-(CAPACITY//8):])
+#    h5_c = binascii.hexlify(h5_state[-(CAPACITY//8):])
+#    h6_c = binascii.hexlify(h6_state[-(CAPACITY//8):])
+#
+#    if h6_c in ms_dict and h5 != ms_dict[h6_c]:
+#        print("t Found same state???")
+#        ms2 = h5
+#        ms1 = ms_dict[h6_c]
+#        break
+#    else:
+#        ms_dict[h6_c] = h5
+#    
+#    if h5_c in ms_dict and h4 != ms_dict[h5_c]:
+#        print("t Found same state???")
+#        ms2 = h4
+#        ms1 = ms_dict[h5_c]
+#        break
+#    else:
+#        ms_dict[h5_c] = h4
+#    
+#    if h4_c in ms_dict and h3 != ms_dict[h4_c]:
+#        print("t Found same state???")
+#        ms2 = h3
+#        ms1 = ms_dict[h4_c]
+#        break
+#    else:
+#        ms_dict[h4_c] = h3
+#    
+#    if h3_c in ms_dict and h2 != ms_dict[h3_c]:
+#        print("t Found same state???")
+#        ms2 = h2
+#        ms1 = ms_dict[h3_c]
+#        break
+#    else:
+#        ms_dict[h3_c] = h2
+#    
+#    if h2_c in ms_dict and h1 != ms_dict[h2_c]:
+#        print("t Found same state???")
+#        ms2 = h1
+#        ms1 = ms_dict[h2_c]
+#        break
+#    else:
+#        ms_dict[h2_c] = h1
+#    
+#    if h1_c in ms_dict and o_h1 != ms_dict[h1_c]:
+#        print("t Found same state???")
+#        ms2 = o_h1
+#        ms1 = ms_dict[h1_c]
+#        break
+#    else:
+#        ms_dict[h1_c] = o_h1
 
 
 print("done")
-printHex(h_state)
-printHex(t_state)
+printHex(ms1)
+printHex(ms2)
 
-exit(0)
+state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[1]
+state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[1]
 
-while True:
-    hash, state = CUSTOM_KECCAK(ms, CAPACITY, HASH_LEN)
-    c = state[-(CAPACITY//8):]
+print("state1")
+printHex(state1)
+print("state2")
+printHex(state2)
 
-    if c in c_list:
-        print(f"Found same state!")
-        break
-    
-    hashes.append(hash)
-    c_list.append(c)
-    states.append(state)
-    messages.append(ms)
-    ms = hash
-
-
-
-index = c_list.index(c)
-ms1    = messages[index]
-state1 = states[index]
-ms2    = ms
-state2 = state
+#ms1    = messages[index]
+#state1 = states[index]
+#ms2    = ms
+#state2 = state
 
 #create some suffix for first message
 suffix1 = b'\x37'
 suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
+print("suffix1:")
+printHex(suffix1)
 
 #xor state of first message with random message -> internal state after second xor
 new_state = arrayXor(suffix1, state1)
+print("New state:")
+printHex(new_state)
 
 #xor result ^ with state from second message -> what we need to xor the second message state with
 suffix2 = arrayXor(new_state, state2)
+print("suffix2:")
+printHex(suffix2)
+
+new_state = arrayXor(suffix2, state2)
+print("new state:")
+printHex(new_state)
 
 ms1 = ms1 + suffix1
-ms2 = ms  + suffix2
+ms2 = ms2 + suffix2
 
 print("Results:")
 print("msg1:")
-hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+hash = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[0]
 printHex(ms1)
 printHex(hash)
 
 print("")
 
 print("msg2:")
-hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+hash = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[0]
 printHex(ms2)
 printHex(hash)
 

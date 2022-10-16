@@ -91,7 +91,7 @@ def bitDif(a, b):
     return cnt
 
 
-msg = bytearray("\x00" * 199, "utf-8") + (123456 % 256).to_bytes(1, 'big')
+msg = bytearray("\x00" * 199, "utf-8") + (492875 % 256).to_bytes(1, 'big')
 min = 1600
 max = 0
 avg = 0

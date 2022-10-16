@@ -1,27 +1,17 @@
 from multiprocessing import Pool
 import random
-
-def multiprocessing_func(x):
-    result = 0
-    for i in x:
-        result += i
-    return result
-
-# -*- coding: utf-8 -*-
-# Implementation by Gilles Van Assche, hereby denoted as "the implementer".
-#
-# For more information, feedback or questions, please refer to our website:
-# https://keccak.team/
-#
-# To the extent possible under law, the implementer has waived all copyright
-# and related or neighboring rights to the source code in this file.
-# http://creativecommons.org/publicdomain/zero/1.0/
-
-#Entire Keccak implementation taken from: https://github.com/XKCP/XKCP/blob/master/Standalone/CompactFIPS202/Python/CompactFIPS202_numpy.py
+from os import urandom
 
 import numpy as np
 import string
 import binascii
+
+from functools import reduce
+
+
+CAPACITY = 48
+RATE = 1600 - CAPACITY
+HASH_LEN = RATE
 
 
 KECCAK_BYTES = 200
@@ -89,8 +79,8 @@ def KeccakF1600(state):
         # iota_step:
         # Exclusive-or first lane of state with round constant
         state[0, 0] ^= IOTA_CONSTANTS[round_num]
-
     return bytearray(state.tobytes(order='F'))
+
 
 def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
     outputBytes = bytearray()
@@ -128,7 +118,7 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
         outputByteLen = outputByteLen - blockSize
         if (outputByteLen > 0):
             state = KeccakF1600(state)
-    return outputBytes, a_state
+    return outputBytes, a_state[-(CAPACITY//8):], a_state
 
 def CUSTOM_KECCAK(inputBytes, capacity, hash_len):
     #capacity = 32
@@ -146,90 +136,61 @@ def arrayXor(array_a, array_b):
     return bytes([a ^ b for a, b in zip(array_a, array_b)])
 
 
-def multiprocessing_func(data):
-    h_c = binascii.hexlify(data[1][-(CAPACITY//8):])
-    if h_c in data[2]:
-        ms1 = data[0]
-        ms2 = data[2][h_c]
-        return [ms1, ms2], h_c, True
-
-    return [data[0]], h_c, False
-
-
-
-CAPACITY = 64
-HASH_LEN = 1600 - CAPACITY
+def multiprocessing_func(messages):
+    result = list()
+    for message in messages:
+        result.append((message, CUSTOM_KECCAK(message, CAPACITY, HASH_LEN)[1]))
+    return result
 
 
 if __name__=='__main__':
-    NPROC = 6 #Numer of available processors
+    NPROC = 8 #Numer of available processors
     p = Pool(NPROC)
 
-    ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
-    #o_tortoise = ms
-    #o_hare = ms
-    o_h1 = ms
+    #ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
+    ##o_tortoise = ms
+    ##o_hare = ms
+    #o_h1 = ms
     ms_dict = dict()
+    state = 0
+    bytes_no = RATE // 8
 
     print(f"Capacity: {CAPACITY}")
 
     while True:
-        h1, h1_state = CUSTOM_KECCAK(o_h1, CAPACITY, HASH_LEN)
-        h2, h2_state = CUSTOM_KECCAK(h1, CAPACITY, HASH_LEN)
-        h3, h3_state = CUSTOM_KECCAK(h2, CAPACITY, HASH_LEN)
-        h4, h4_state = CUSTOM_KECCAK(h3, CAPACITY, HASH_LEN)
-        h5, h5_state = CUSTOM_KECCAK(h4, CAPACITY, HASH_LEN)
-        h6, h6_state = CUSTOM_KECCAK(h5, CAPACITY, HASH_LEN)
-
-        chunks = [
-            [o_h1, h1_state, ms_dict],
-            [h1,   h2_state, ms_dict],
-            [h2,   h3_state, ms_dict],
-            [h3,   h4_state, ms_dict],
-            [h4,   h5_state, ms_dict],
-            [h5,   h6_state, ms_dict]
-        ]
-
-        r_list = []
-        for result in p.map(multiprocessing_func, chunks):
-            data, h_c, rc = result
-            r_list.append([data[0], h_c])
-            if rc == True:
-                p.terminate()
-                p.close()
-                print("Done???")
-                print("Messages:")
-                printHex(data[0])
-                printHex(data[1])
-                hash, state = CUSTOM_KECCAK(data[0], CAPACITY, HASH_LEN)
-                printHex(state)
-                hash, state = CUSTOM_KECCAK(data[1], CAPACITY, HASH_LEN)
-                printHex(state)
-                print("HC:")
-                printHex(h_c)
+        state += 1000
+        results = p.map(multiprocessing_func, [[urandom(bytes_no) for _ in range(state)] for _ in range(NPROC + 1)])
+        results = reduce(lambda x, y: x + y, results)
+        for (msg, c) in results:
+            c = str(c)
+            if c in ms_dict:
+                print(len(ms_dict))
+                print("Done")
+                printHex(ms_dict[c])
+                printHex(msg)
+                print("")
+                printHex(CUSTOM_KECCAK(ms_dict[c], CAPACITY, HASH_LEN)[2])
+                printHex(CUSTOM_KECCAK(msg, CAPACITY, HASH_LEN)[2])
+                ms1 = ms_dict[c]
+                ms2 = msg
+                #p.terminate()
+                #p.close()
                 break
-        
-        #TODO test each other
-        msgs=[]
-        for item in r_list:
-            if item[0] not in msgs:
-                msgs.append(item[0])
-                ms_dict[item[1]] = item[0]
             else:
-                print("Duplicates!!!",end=' ')
-                print(r_list[1])
-                p.close()
-                break
+                ms_dict[c] = msg
+        else:
+            print(len(ms_dict))
+            continue
+        break
 
-        o_h1 = h6
 
-    exit(0)
+
     print("done")
     printHex(ms1)
     printHex(ms2)
 
-    tmp, state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
-    tmp, state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+    state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[2]
+    state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[2]
 
     print("state1")
     printHex(state1)
@@ -266,13 +227,13 @@ if __name__=='__main__':
 
     print("Results:")
     print("msg1:")
-    hash, state = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)
+    hash = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[0]
     printHex(ms1)
     printHex(hash)
 
     print("")
 
     print("msg2:")
-    hash, state = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)
+    hash = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[0]
     printHex(ms2)
     printHex(hash)

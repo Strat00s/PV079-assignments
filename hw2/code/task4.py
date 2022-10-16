@@ -11,7 +11,6 @@
 #Entire Keccak implementation taken from: https://github.com/XKCP/XKCP/blob/master/Standalone/CompactFIPS202/Python/CompactFIPS202_numpy.py
 
 import numpy as np
-import string
 
 
 KECCAK_BYTES = 200
@@ -83,9 +82,38 @@ def KeccakF1600(state):
     return bytearray(state.tobytes(order='F'))
 
 
-input = bytearray("\x00" * 199, "utf-8") + (492875 % 256).to_bytes(1, 'big')
+#taken from https://www.geeksforgeeks.org/number-of-mismatching-bits-in-the-binary-representation-of-two-integers/
+def bitDif(a, b):
+    cnt = 0
+    for i in range(0, 1600):
+        if ((( a >>  i) & 1) != (( b >>  i) & 1)):
+            cnt += 1
+    return cnt
 
+
+msg = bytearray("\x00" * 199, "utf-8") + (492875 % 256).to_bytes(1, 'big')
+min = 1600
+max = 0
+avg = 0
 
 for i in range(0, 1600):
-    input[i // 8] = input[i // 8] ^ (1 << i % 8)
+    old_msg = msg.copy()
+    msg[i // 8] = msg[i // 8] ^ (1 << i % 8)
+
+    int_old_msg = int.from_bytes(old_msg, byteorder="big")
+    int_msg     = int.from_bytes(msg, byteorder="big")
+
+    old_hash = int.from_bytes(KeccakF1600(old_msg), byteorder="big")
+    hash     = int.from_bytes(KeccakF1600(msg), byteorder="big")
+
+    result = bitDif(old_hash, hash)
+    avg += result
+    if result < min:
+        min = result
+    if result > max:
+        max = result
+
+print(f"Max: {max}")
+print(f"Min: {min}")
+print(f"Avg: {avg / 1600}")
 

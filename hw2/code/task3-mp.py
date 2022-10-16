@@ -9,7 +9,7 @@ import binascii
 from functools import reduce
 
 
-CAPACITY = 48
+CAPACITY = 56
 RATE = 1600 - CAPACITY
 HASH_LEN = RATE
 
@@ -143,84 +143,50 @@ def multiprocessing_func(messages):
     return result
 
 
+#inspired by a pretty much same problem https://github.com/p4-team/ctf/blob/117e8da28f3d3e0ce95ea3d2f18bb9d78dd157bb/2019-03-23-0ctf-quals/crypto_keccak/README.md
+#mostly just to get the multirpocessing to work properly and the lambda reduction
 if __name__=='__main__':
-    NPROC = 8 #Numer of available processors
-    p = Pool(NPROC)
-
-    #ms          = bytes("\x00" * (HASH_LEN//8), "utf-8")
-    ##o_tortoise = ms
-    ##o_hare = ms
-    #o_h1 = ms
+    NPROC = 12 #Numer of available processors
+    pool = Pool(NPROC)
+    
     ms_dict = dict()
-    state = 0
-    bytes_no = RATE // 8
+    step = 0
 
     print(f"Capacity: {CAPACITY}")
 
     while True:
-        state += 1000
-        results = p.map(multiprocessing_func, [[urandom(bytes_no) for _ in range(state)] for _ in range(NPROC + 1)])
+        step += 2000
+        results = pool.map(multiprocessing_func, [[urandom(RATE//8) for j in range(step)] for i in range(NPROC + 1)])
         results = reduce(lambda x, y: x + y, results)
-        for (msg, c) in results:
-            c = str(c)
-            if c in ms_dict:
+        for msg, c in results:
+            c = binascii.hexlify(c)
+            if c in ms_dict:        #we got a match if c is already a key
                 print(len(ms_dict))
                 print("Done")
-                printHex(ms_dict[c])
-                printHex(msg)
-                print("")
-                printHex(CUSTOM_KECCAK(ms_dict[c], CAPACITY, HASH_LEN)[2])
-                printHex(CUSTOM_KECCAK(msg, CAPACITY, HASH_LEN)[2])
                 ms1 = ms_dict[c]
                 ms2 = msg
-                #p.terminate()
-                #p.close()
                 break
             else:
-                ms_dict[c] = msg
+                ms_dict[c] = msg    #store message
         else:
-            print(len(ms_dict))
+            print(len(ms_dict))     #"progress"
             continue
         break
-
-
-
-    print("done")
-    printHex(ms1)
-    printHex(ms2)
 
     state1 = CUSTOM_KECCAK(ms1, CAPACITY, HASH_LEN)[2]
     state2 = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[2]
 
-    print("state1")
-    printHex(state1)
-    print("state2")
-    printHex(state2)
-
-    #ms1    = messages[index]
-    #state1 = states[index]
-    #ms2    = ms
-    #state2 = state
-
     #create some suffix for first message
     suffix1 = b'\x37'
     suffix1 = suffix1 + bytes("\x00" * (200 - len(suffix1)), "utf-8")  #pad the sufix
-    print("suffix1:")
-    printHex(suffix1)
 
     #xor state of first message with random message -> internal state after second xor
     new_state = arrayXor(suffix1, state1)
-    print("New state:")
-    printHex(new_state)
 
     #xor result ^ with state from second message -> what we need to xor the second message state with
     suffix2 = arrayXor(new_state, state2)
-    print("suffix2:")
-    printHex(suffix2)
 
     new_state = arrayXor(suffix2, state2)
-    print("new state:")
-    printHex(new_state)
 
     ms1 = ms1 + suffix1
     ms2 = ms2 + suffix2
@@ -231,9 +197,20 @@ if __name__=='__main__':
     printHex(ms1)
     printHex(hash)
 
+    with open("ms1.txt", "w") as f:
+        f.write(ms1.hex())
+    with open("hash1.txt", "w") as f:
+        f.write(hash.hex())
+
     print("")
 
     print("msg2:")
     hash = CUSTOM_KECCAK(ms2, CAPACITY, HASH_LEN)[0]
     printHex(ms2)
     printHex(hash)
+
+    with open("ms2.txt", "w") as f:
+        f.write(ms2.hex())
+    with open("hash2.txt", "w") as f:
+        f.write(hash.hex())
+

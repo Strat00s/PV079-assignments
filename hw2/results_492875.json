@@ -1,5 +1,5 @@
 {
-    "D1"    : "Security mainly depends on capacity parameter, which determins the collision probability (and security is half the capacity bits).",
+    "D1"    : "Main parametres are `r`, `c` and `hash_len`. `r` determins the rate at which bits are taken from input and processed (xorred with `r` bits from internal state). `c` determins how many bits of internal state won't be xored with input. This also determins the security, as they pretty much can't be 'directly' influced by input. Higher `c` = higher security. `hash_len` determins how many bits are taken from produced hash (n bits from multiples of 1600bits).",
     "m0"    : "0x69cb",
     "c0"    : 448,
     "hash0" : "0x94bd25c4cf6ca889126df37ddd9c36e6a9b28a4fe15cc3da6debcdd7",

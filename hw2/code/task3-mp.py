@@ -1,15 +1,24 @@
-from multiprocessing import Pool
-import random
-from os import urandom
+# -*- coding: utf-8 -*-
+# Implementation by Gilles Van Assche, hereby denoted as "the implementer".
+#
+# For more information, feedback or questions, please refer to our website:
+# https://keccak.team/
+#
+# To the extent possible under law, the implementer has waived all copyright
+# and related or neighboring rights to the source code in this file.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+#Entire Keccak implementation taken from: https://github.com/XKCP/XKCP/blob/master/Standalone/CompactFIPS202/Python/CompactFIPS202_numpy.py
 
 import numpy as np
-import string
 import binascii
 
+from multiprocessing import Pool
+from os import urandom
 from functools import reduce
 
 
-CAPACITY = 56
+CAPACITY = 16
 RATE = 1600 - CAPACITY
 HASH_LEN = RATE
 

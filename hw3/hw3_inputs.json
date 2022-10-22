@@ -1,0 +1,16 @@
+
+{
+    "task_one": {
+        "h1": "dcae4a1993b9a13eb52d99fde7701f35",
+        "key": "74a8ed356dc1a828645a6c12fcf9a1b1"
+    },
+    "task_two": {
+        "m2": "This is sooooooooooome interesting message crafted for a person with UCO: 492875",
+        "m3": "This is a completely unrelated message, again for someone with UCO: 492875",
+        "t2": "72182255a4e75ccc1f6aed0e7b444ea3",
+        "t3": "dc866868c1f9ad8669aefd90f9d1fa2a"
+    },
+    "task_three": {
+        "encrypted_command": "77546837aa048d02e1d82739f9e48bbaeb51e89a688afb20f4a2b520708049047eed9bddaddb10a648afe49bb5033835675c93a96e9804c0e9ae3ed0695ba41e33aa5997395d097e2c44fd9bdf3619568acd5b7416da3fe42d1bc78fb60d2841f810279ba27adb9de7c20c0459987c4aa8579af443c9cde1f6c9485c97"
+    }
+}

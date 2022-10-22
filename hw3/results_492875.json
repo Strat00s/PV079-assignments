@@ -1,0 +1,15 @@
+{
+    "task_one": {
+        "description": "Because the message fits into a single block, we know that only 1 'round' happened. This means that the hash we have is digest of the original message and we can just simply decrypt it to get the original message.",
+        "m1": "diocese useable"
+    },
+    "task_two": {
+        "description": "I solved this task by...",
+        "m5": "0123456789ABCDEF..."
+    },
+    "task_three": {
+        "description": "I solved this task by...",
+        "plaintext": "/trans?from=000000...",
+        "modified_encrypted_command": "0123456789ABCDEF..."
+    }
+}

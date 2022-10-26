@@ -88,33 +88,17 @@ m3 = bytearray("This is a completely unrelated message, again for someone with U
 t2 = bytearray.fromhex("72182255a4e75ccc1f6aed0e7b444ea3")
 t3 = bytearray.fromhex("dc866868c1f9ad8669aefd90f9d1fa2a")
 
-iv  = bytearray.fromhex("00" * 16)
-key  = bytearray.fromhex("54" * 16)
-
-#t2 = get_cbc_mac(key, iv, m2)
-#t3 = get_cbc_mac(key, iv, m3)
-
 m4 = m2 + m3
-#t4 = get_cbc_mac(key, iv, m4)
 
+#m5
+#iv = t2
+#key = ?
+#msg = m3[-16:]
+#-> input = iv xor msg
 
 m5 = arrayXor(t2, m3[:16]) + m3[16:]
-#t5 = get_cbc_mac(key, iv, m5)
-
-
 
 print(m4)
 print(m5)
 printHex(m4)
 printHex(m5)
-
-#printHex(t4)
-#printHex(t5)
-
-
-"""m5
-    iv = t2
-    key = ?
-    msg = m3[-16:]
-    -> input = iv xor msg
-"""

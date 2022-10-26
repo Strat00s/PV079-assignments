@@ -130,5 +130,22 @@ for i in range(0, blocks):
     nonce += 1
     nonce = bytearray.fromhex(f"{nonce:x}")
 
-print(decrypted_msg)
+forged_msg = decrypted_msg[:10] + "492875" + decrypted_msg[16:]
+
+print(f"Decrypted msg: {decrypted_msg}")
+print(f"Forged msg:    {forged_msg}")
+
+response = requests.get("https://pv079.fi.muni.cz/encrypt", params={"msg":forged_msg.encode("utf-8").hex(), "iv":iv.hex()},)
+if response.status_code != 200:
+    print(f"Error ({response.status_code}): {response.raw}")
+    exit(0)
+
+encrypted_msg = response.json()['result']
+print(f"Encrypted: {encrypted_msg}")
+
+send_response = requests.post(
+    "https://pv079.fi.muni.cz/send",
+    data={"encrypted_command":encrypted_msg},)
+print(send_response.json())
+
 print("\ndone")

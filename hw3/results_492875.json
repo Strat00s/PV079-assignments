@@ -1,15 +1,15 @@
 {
     "task_one": {
         "description": "Because the message fits into a single block, we know that only 1 'round' happened. This means that the hash we have is digest of the original message and we can just simply decrypt it to get the original message.",
-        "m1": "diocese useable"
+        "m1"         : "diocese useable"
     },
     "task_two": {
         "description": "CBC uses the hash of the last message block as the iv for next message block. Because we know the t2, we know the iv for m3 (message 4 is composed of both messages) -> xoring the t2 with first block (16 bytes) of m3 gives us first block of message 5 (as its iv will be all zeros and we need the same xor result as t2 with m3). The rest of the m5 can stay the same as m3.",
-        "m5": "26704b26848e2fec7e4a8e61163422c674656c7920756e72656c61746564206d6573736167652c20616761696e20666f7220736f6d656f6e6520776974682055434f3a20343932383735"
+        "m5"         : "26704b26848e2fec7e4a8e61163422c674656c7920756e72656c61746564206d6573736167652c20616761696e20666f7220736f6d656f6e6520776974682055434f3a20343932383735"
     },
     "task_three": {
-        "description": "I solved this task by...",
-        "plaintext": "/trans?from=000000...",
-        "modified_encrypted_command": "0123456789ABCDEF..."
+        "description"               : "Since the same block cypher is used for everything, we can use the 'encrypt' endpoint with 'iv' set to zeros and nonce as 'msg' to get the hash of 'nonce', which is the same thing CTR mode does but then it xores it with plaintext. So xoring the 'nonce' hash with first block of CRT encrypted text we get the plaintext. Repeat this for every block (and increment the nonce by one for every block) and we get the entire plaintext message.",
+        "plaintext"                 : "/trans?to=408788&from=410390&amount=10000&id=75a5d522b22452a78bd42f4ea01a4af4",
+        "modified_encrypted_command": "d7ca9068614b5c2fd3b4d57d054c776a3881cf3950c066912e46a937e19c6cc5c201ac5f1fb35becb976345fd281329b748592cd7501e8477fdb9bd60d282cca4499fc5b98dfad09c17e927582881d8b97c7e11387d9a9342971101d840d2841f810279ba27adb9de7c20c04596eba2780d4f8680a063cdec6e6235cad"
     }
 }

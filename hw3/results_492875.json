@@ -4,7 +4,7 @@
         "m1": "diocese useable"
     },
     "task_two": {
-        "description": "CBC uses the hash of the last message block as the iv for next message block. Because we know the t2, we know the iv for m3 (message 4 is composed of both messages) -> xoring the t2 with first block (16 bytes) of m3 gives us first block of message 5 (as it's iv will be all zeros and we need the same xor result as t2 with m3). The rest of the message can stay the same.",
+        "description": "CBC uses the hash of the last message block as the iv for next message block. Because we know the t2, we know the iv for m3 (message 4 is composed of both messages) -> xoring the t2 with first block (16 bytes) of m3 gives us first block of message 5 (as its iv will be all zeros and we need the same xor result as t2 with m3). The rest of the m5 can stay the same as m3.",
         "m5": "26704b26848e2fec7e4a8e61163422c674656c7920756e72656c61746564206d6573736167652c20616761696e20666f7220736f6d656f6e6520776974682055434f3a20343932383735"
     },
     "task_three": {

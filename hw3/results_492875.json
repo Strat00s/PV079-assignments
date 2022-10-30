@@ -4,11 +4,11 @@
         "m1"         : "diocese useable"
     },
     "task_two": {
-        "description": "CBC uses the hash of the last message block as the iv for next message block. Because we know the t2, we know the iv for m3 (message 4 is composed of both messages) -> xoring the t2 with first block (16 bytes) of m3 gives us first block of message 5 (as its iv will be all zeros and we need the same xor result as t2 with m3). The rest of the m5 can stay the same as m3.",
+        "description": "CBC uses the hash of the last message block as the 'iv' for next message block. Because we know the 't2', we know the 'iv' for 'm3' ('m4' is composed of both messages) -> xoring the 't2' with first block (16 bytes) of 'm3' gives us first block of 'm5' (as its 'iv' will be all zeros and we need the same xor result as xoring 't2' with 'm3'). The rest of the 'm5' is the same as 'm3'.",
         "m5"         : "26704b26848e2fec7e4a8e61163422c674656c7920756e72656c61746564206d6573736167652c20616761696e20666f7220736f6d656f6e6520776974682055434f3a20343932383735"
     },
     "task_three": {
-        "description"               : "Same 'blakc box' is used for everything: use the 'encrypt' endpoint with zeroed 'iv' and 'nonce' as 'msg' to get the hash of 'nonce', which is the same thing CTR mode does but then it xores it with plaintext. So xoring the 'nonce' hash with first block of CRT encrypted text we get the plaintext. Repeat this for every block (and increment the nonce by one for every block) and we get the entire plaintext message. For same hash: 'iv' xor orig_plaintext[:16] xor forged_plaintext[:16] -> new 'iv'",
+        "description"               : "Same 'black box' is used for everything: use the 'encrypt' endpoint with zeroed 'iv' and 'nonce' as 'msg' to get the 'nonce_hash', which is the same thing CTR mode does but then it xores it with plaintext. So xoring the 'nonce_hash' with first block of CRT encrypted text we get the plaintext. Repeat this for every block (and increment the 'nonce' by one for every block) and we get the entire plaintext message. For same hash: 'iv' xor orig_plaintext[:16] xor forged_plaintext[:16] -> new 'iv'",
         "plaintext"                 : "/trans?to=408788&from=410390&amount=10000&id=75a5d522b22452a78bd42f4ea01a4af4",
         "modified_encrypted_command": "bf0732d53c4d3e34a10bf15e7a4329fe6ff68461f4db4105a8f66ec25bef3d6dffb77ede55de25621b45f1f187585058ce15135c3d4a7758a57fb83b0348985e77a6fd6b66476d9e340b11ba42d5dcd0bae4195c60b35c35c24f8687480d2841f810279ba27adb9deec8030b54987c4aa8579af443c9cde1f6c9485c97"
     }

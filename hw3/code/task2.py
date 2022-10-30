@@ -72,12 +72,6 @@ def oracle_encrypt(key: bytes, msg: bytes, iv: Optional[bytes] = None) -> bytes:
     return nonce + ciphertext + iv + mac_tag
 
 
-
-def printHex(byte_data):
-    for byte in byte_data:
-        print(f"{byte:02x}", end="")
-    print("")
-
 #byte array xoring taken from: https://programming-idioms.org/idiom/238/xor-byte-arrays/4146/python
 def arrayXor(array_a, array_b):
     return bytes([a ^ b for a, b in zip(array_a, array_b)])
@@ -88,7 +82,15 @@ m3 = bytearray("This is a completely unrelated message, again for someone with U
 t2 = bytearray.fromhex("72182255a4e75ccc1f6aed0e7b444ea3")
 t3 = bytearray.fromhex("dc866868c1f9ad8669aefd90f9d1fa2a")
 
+
+print(f"m2: {m2.hex()}")
+print(f"m3: {m3.hex()}")
+print(f"t2: {t2.hex()}")
+print(f"t3: {t3.hex()}")
+print("")
+
 m4 = m2 + m3
+print(f"m4: {m4.hex()}")
 
 #m5
 #iv = t2
@@ -97,8 +99,29 @@ m4 = m2 + m3
 #-> input = iv xor msg
 
 m5 = arrayXor(t2, m3[:16]) + m3[16:]
+print(f"m5: {m5.hex()}")
 
-print(m4)
-print(m5)
-printHex(m4)
-printHex(m5)
+
+print("\n---------------------------------------------\nTest with known key:")
+key = bytearray.fromhex("00" * 16)
+t2 = get_cbc_mac(key, key, m2)
+t3 = get_cbc_mac(key, key, m3)
+
+print(f"key:    {key.hex()}")
+print(f"m2:     {m2.hex()}")
+print(f"m3:     {m3.hex()}")
+print(f"new t2: {t2.hex()}")
+print(f"new t3: {t3.hex()}")
+
+m4 = m2 + m3
+m5 = arrayXor(t2, m3[:16]) + m3[16:]
+print(f"\nm4: {m4.hex()}")
+print(f"m5: {m5.hex()}")
+
+print(f"\nm4 MAC: {get_cbc_mac(key, key, m4).hex()}")
+print(f"m5 MAC: {get_cbc_mac(key, key, m5).hex()}")
+
+#print(m4)
+#print(m5)
+#print(m4.hex())
+#print(m5.hex())

@@ -44,7 +44,7 @@ for i in range(0, blocks):
     #increment counter (nonce with counter)
     nonce = int(nonce.hex(), 16)
     nonce += 1
-    nonce = bytearray.fromhex(f"{nonce:x}")
+    nonce = bytearray.fromhex(f"{nonce:032x}")
 
 forged_msg = decrypted_msg[:10] + "492875" + decrypted_msg[16:]
 

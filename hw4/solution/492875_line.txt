@@ -1,0 +1,2 @@
+75
+The bit length of the scalar.

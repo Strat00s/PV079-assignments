@@ -1,0 +1,77 @@
+ASSIGNMENT #5 - DEADLINE 30. 11. 2022, 23:59 (CET). UP TO 10 POINTS AWARDED.
+
+>> The goal of this assignment is to:
+   1. Familiarize with padding oracle attack.
+   2. Reveal the plaintext from a given ciphertext without the knowledge 
+   of a secret symmetric key.
+
+>> Web-site communication scheme
+
+We programmed a web application (web app) that receives and processes 
+messages encrypted with AES in the CBC mode. This web app is vulnerable 
+to the padding oracle attack, and is available at: 
+http://172.26.5.113
+The web application is available only from FI network. If you want to access
+the web application from other place than FI, use FI VPN. VPN setup instructions
+are available at [3].
+
+1. The web app receives an input from a client program (e.g., a web browser)
+   using a HTTP GET method, e.g., index.py?iv=XXX&ciphertext=XXX.
+2. The web app decrypts the input using a secret key.
+3. The web app checks the padding. If the padding is correct (PKCS#7, see 
+   [1] below), the web app returns the HTTP status code "200 OK", otherwise
+   the HTTP status code "400 Bad Request". The HTTP status code "400 Bad 
+   Request" can also be returned in other cases (e.g., when iv is not 16B
+   long, or ciphertext is not multiple of 16B in length). If needed, you can
+   submit your inputs manually and check the response in the browser.
+
+>> Tasks
+
+1. Read about the padding oracle attack. See [2] below.
+2. Download the file PV079_assignment_5_cipher.txt. The file contains 
+   UCOs, the initialization vectors (IVs) and ciphertexts. IV and 
+   ciphertext are hexadecimal numbers.
+3. Find your IV and ciphertext in a row with your UCO.
+4. Implement a client program that realizes the padding oracle attack. 
+   You are free to use python, Java or C#. We prepared a python template 
+   that sends a request and receives a response from the web app. If 
+   you decide to use python, you can use the template from Study Materials.
+
+   !!! You are not allowed to use any 3rd party solution except for general standard libraries of the programming language of your choice!!!
+
+5. Before you run the client program on the whole ciphertext, try to run it
+on the part of the input with known plaintext and verify that it works
+correctly. The ciphertext with known plaintext is provided below.
+6. Reveal the plaintext for your IV and ciphertext. The plaintext is 
+   an ASCII encoded text.
+ 
+!!!IMPORTANT!!!
+In the padding oracle attack, you will reveal the corresponding plaintext 
+byte by byte, i.e., starting from the end of the ciphertext and moving 
+towards the beginning of the ciphertext. In the worst case, you will 
+need to try all 128 (plaintext is in ASCII) possibilities to reveal a 
+single byte, i.e., a ciphertext of length of 48B will need 6144 requests.
+In order to not overwhelm the web server with the web app, please before you 
+run the client program on the whole ciphertext, try to run the client
+program on the part of the input with known plaintext and verify that 
+it works correctly:
+plaintext: "Modern cryptography is heavily based on mathematical theory and computer science practice" [4]
+iv: abcdef1234567890abcdef1234567890
+ciphertext: 5ea5810e09cdeaee3d11c24dfd082d2bfd26349c5b75ecec82583cece3d11372f5db1b9420a9cbf228a98ba2d6b7bcbb86f070de15b1145d112b84e62d883d574e17e5f7ad480dbcebbf376cbf85bc27185091120f30fb6ee54623edb96594fc
+
+>> Submission and evaluation
+
+Submit two files:
+1) a plain.txt file that will contain a revealed plaintext.
+2) a zip file with the source code of the client program. The source code files must include 
+all files required to compile and build the binary. Please do not include any files that are
+not required to compile and build the binary.
+
+Have fun!
+
+Resources:
+[1] PKCS#7 padding, https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS#5_and_PKCS#7
+[2] Padding oracle attack, https://en.wikipedia.org/wiki/Padding_oracle_attack
+[3] FI VPN, https://www.fi.muni.cz/tech/unix/vpn.html.cs
+[4] https://en.wikipedia.org/wiki/Cryptography
+END

@@ -125,3 +125,18 @@ print(f"m5 MAC: {get_cbc_mac(key, key, m5).hex()}")
 #print(m5)
 #print(m4.hex())
 #print(m5.hex())
+iv = bytes("\x00" * 16, "utf-8")
+key2 = "666ae07a958c8ac03f1a709633ff5c68"
+m2 = "This is sooooooooooome interesting message crafted for a person with UCO: 527383"
+m3 = "This is a completely unrelated message, again for someone with UCO: 527383"
+
+t2custom = get_cbc_mac(bytes.fromhex(key2), iv, bytearray(m2, "utf-8")).hex()
+# t3custom = get_cbc_mac(bytes.fromhex(key2), iv, bytearray(m3, "utf-8")).hex()
+m4 = m2 + m3
+m5 = arrayXor(bytes.fromhex(t2custom), bytes(m3[:16], "utf-8")) + bytes(m3[16:], "utf-8") 
+
+cbc4 = get_cbc_mac(bytes.fromhex(key2), iv, bytearray(m4,"utf-8"))
+cbc5 = get_cbc_mac(bytes.fromhex(key2), iv, bytearray(m5))
+
+print(cbc4.hex())
+print(cbc5.hex())

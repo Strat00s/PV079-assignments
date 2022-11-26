@@ -14,6 +14,7 @@ def arrayXor(array_a, array_b):
 encrypted_command = bytearray.fromhex("77546837aa048d02e1d82739f9e48bbaeb51e89a688afb20f4a2b520708049047eed9bddaddb10a648afe49bb5033835675c93a96e9804c0e9ae3ed0695ba41e33aa5997395d097e2c44fd9bdf3619568acd5b7416da3fe42d1bc78fb60d2841f810279ba27adb9de7c20c0459987c4aa8579af443c9cde1f6c9485c97")
 
 nonce = encrypted_command[:16]
+print(nonce.hex())
 ctr   = encrypted_command[16:-32]
 iv    = encrypted_command[-32:-16]
 mac   = encrypted_command[-16:]
@@ -33,13 +34,17 @@ for i in range(0, blocks):
     
     #extract nonce hash
     nonce_hash = bytearray.fromhex(response.json()["result"])[-16:]
+    print(response.json())
     start = i * 16
     end   = (i + 1) * 16
     if end > len(ctr):
         end = len(ctr)
+    print(start)
+    print(end)
     #xor it with nth block of ctr hash to get plaintext
     decrypted_block = arrayXor(nonce_hash, ctr[start:end])
     decrypted_msg += f"{decrypted_block.decode()}"
+    print(decrypted_block)
 
     #increment counter (nonce with counter)
     nonce = int(nonce.hex(), 16)

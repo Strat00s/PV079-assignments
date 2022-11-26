@@ -11,6 +11,8 @@
 #Entire Keccak implementation taken from: https://github.com/XKCP/XKCP/blob/master/Standalone/CompactFIPS202/Python/CompactFIPS202_numpy.py
 
 import numpy as np
+import string
+import binascii
 
 
 KECCAK_BYTES = 200
@@ -81,44 +83,58 @@ def KeccakF1600(state):
 
     return bytearray(state.tobytes(order='F'))
 
+def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
+    outputBytes = bytearray()
+    state = bytearray([0 for i in range(200)])
+    rateInBytes = rate//8
+    blockSize = 0
+    a_state = 0
+    input_copy = bytearray(inputBytes)
+    if (((rate + capacity) != 1600) or ((rate % 8) != 0)):
+        return
+    inputOffset = 0
 
-def printHex(byte_data):
-    for byte in byte_data:
-        print(f"{byte:02x}", end="")
-    print("")
+    # === Absorb all the input blocks ===
+    while(inputOffset < len(inputBytes)):
+        blockSize = min(len(inputBytes)-inputOffset, rateInBytes)
+        for i in range(blockSize):
+            state[i] = state[i] ^ inputBytes[i+inputOffset]
+        inputOffset = inputOffset + blockSize
+        if (blockSize == rateInBytes):
+            state = KeccakF1600(state)
+            blockSize = 0
 
-#taken from https://www.geeksforgeeks.org/number-of-mismatching-bits-in-the-binary-representation-of-two-integers/
-def bitDif(a, b):
-    cnt = 0
-    for i in range(0, 1600):
-        if ((( a >>  i) & 1) != (( b >>  i) & 1)):
-            cnt += 1
-    return cnt
+    a_state = state
+
+    # === Do the padding and switch to the squeezing phase ===
+    state[blockSize] = state[blockSize] ^ delimitedSuffix
+    if (((delimitedSuffix & 0x80) != 0) and (blockSize == (rateInBytes-1))):
+        state = KeccakF1600(state)
+    state[rateInBytes-1] = state[rateInBytes-1] ^ 0x80
+    state = KeccakF1600(state)
+
+    # === Squeeze out all the output blocks ===
+    while(outputByteLen > 0):
+        blockSize = min(outputByteLen, rateInBytes)
+        outputBytes = outputBytes + state[0:blockSize]
+        outputByteLen = outputByteLen - blockSize
+        if (outputByteLen > 0):
+            state = KeccakF1600(state)
+    return outputBytes
+def CUSTOM_KECCAK(inputBytes, capacity):
+    #capacity = 32
+    return Keccak(1600 - capacity, capacity, inputBytes, 0x06, 1600//8)
 
 
-msg = bytearray("\x00" * 199, "utf-8") + (492875 % 256).to_bytes(1, 'big')
-printHex(msg)
-min = 1600
-max = 0
-avg = 0
+CAPACITY = 56
 
-for i in range(0, 1600):
-    old_msg = msg.copy()
-    old_msg[i // 8] = old_msg[i // 8] ^ (1 << i % 8)
+ms1 = bytearray.fromhex("bbebd040ecf16c12c26770052cb4ad9aab3df7b7be2e8bd37fef020a23ef622310e37a33ca5b588f41653308ea0c612d1e2c65ac62844ed1e9a4b161b6232fb418cec3ddaf7492c55375613c117b0548e20183d79709a8fe1171f5ba77018ab6c7c94db4b6923747ae4541575086670dde861eb10c31e97afff4a14036c650e4189a0e4cb48186f9656984975c766e727cc0bf962caa4216377adf65e7336314554050843f39f4695a298b42ebcd1b9ac205ec4f753f8d439d4dc6c398a486fc3a3700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+ms2 = bytearray.fromhex("feedcfb6a69a4cfe57046de84811108ed8a1f7022f346284dd285a1f9ef56570c27b6e0e5ee72ecdbe2f2668c5bee88d07343774c43ddd1b3d94e8c2a3c3dcd5063cd4724f226cb8b4100e3129e450129c5b3034d1b51f8b7a0839834ccd23e4612c34d8d578c2b503de4555395505c7c0b9a9d538f8b6d8d40c0324fe7d8e3c91c0662a344ac08b963d61202349e1da28445c5f983b3c79c7f44333c96fc7d8fb75609aff57696b5fd516c8880ff96b9af480a685ba52db3ed1477b031bd4bc46b1254b3f3f732c9f91771e47b40be6ef5b7c18e232d9868ee2ecdfc412a960df22a82281bcdeca18f921a20f6b2036fbe51d0eafd5c494ff42a9a4416e59ea66025c2d29c303c4afc649e0c5e01f3e92782187b3570dacf0960f74ce1f4ed57947865a9e21cc56158b4fb48b974a7bbf4605ccf7e61e3abc57a5b12d65d7d29e16bb76d70da3009c0d66705bff0f31f50e5d949083eea0b6dad837e49f2f8cd9781d1d8067d483ffe27288787211afb66ba97ca864ab5459a13fab71560e47670700000000000000")
 
-    old_hash = int.from_bytes(KeccakF1600(old_msg), byteorder="big")
-    hash     = int.from_bytes(KeccakF1600(msg), byteorder="big")
+hash1 = CUSTOM_KECCAK(ms1, CAPACITY) 
+hash2 = CUSTOM_KECCAK(ms2, CAPACITY) 
 
-    result = bitDif(old_hash, hash)
-    avg += result
-    if result < min:
-        min = result
-    if result > max:
-        max = result
-
-printHex(msg)
-
-print(f"Max: {max}")
-print(f"Min: {min}")
-print(f"Avg: {avg / 1600}")
-
+if hash1 == hash2:
+    print("GG EZ")
+else:
+    print("UH OH")

@@ -1,9 +1,12 @@
 from urllib import request, error
 from time import sleep
 
-# Example iv and ciphertext with known plaintext
-iv = 'abcdef1234567890abcdef1234567890'
+
+BLOCK_SIZE = 16
+
+iv         = 'abcdef1234567890abcdef1234567890'
 ciphertext = '5ea5810e09cdeaee3d11c24dfd082d2bfd26349c5b75ecec82583cece3d11372f5db1b9420a9cbf228a98ba2d6b7bcbb86f070de15b1145d112b84e62d883d574e17e5f7ad480dbcebbf376cbf85bc27185091120f30fb6ee54623edb96594fc'
+plaintext  = "Modern cryptography is heavily based on mathematical theory and computer science practice"
 
 
 # The method probes the web application with a modified ciphertext
@@ -11,6 +14,17 @@ ciphertext = '5ea5810e09cdeaee3d11c24dfd082d2bfd26349c5b75ecec82583cece3d11372f5
 # The first param must be a hex string
 # The second param must be a hex string
 
+
+def arrayXor(array_a, array_b):
+    return bytearray([a ^ b for a, b in zip(array_a, array_b)])
+
+def generatePairs(array, split_len):
+    print(len(array))
+    print(len(array) / split_len)
+    result = list()
+    for i in range(0, len(array) // split_len - 1):
+        result.append([array[i * split_len : (i + 1) * split_len], array[(i + 1) * split_len : (i + 2) * split_len]])
+    return result
 
 def probe(iv, ciphertext):
     url = 'http://172.26.5.113/index.py?iv=' + iv + '&ciphertext=' + ciphertext
@@ -21,9 +35,102 @@ def probe(iv, ciphertext):
         return False
 
 
-if probe(iv, ciphertext):
-    print('Padding is correct')
-else:
-    print('Something went wrong')
+plaintext = ""
+iv_ct_pairs = generatePairs(bytearray.fromhex(iv + ciphertext), BLOCK_SIZE)
+for iv, ct in iv_ct_pairs:
+    msg = bytearray.fromhex("00" * BLOCK_SIZE)
+    for i in reversed(range(0, BLOCK_SIZE)):
+        padding = bytearray.fromhex("00" * (i + 1)  + f"{BLOCK_SIZE - i:02x}" * (BLOCK_SIZE - i - 1))
+        print(f"Padding: {padding.hex()}")
+        print(f"Message: {msg.hex()}")
+        old = iv
+        for c in range(0, 256):
+            msg[i] = c
+            iv = arrayXor (iv, padding)
+            iv = arrayXor (iv, msg)
+            if probe(iv.hex(), ct.hex()):
+                print(f"{c ^ (BLOCK_SIZE - i):02x} {iv.hex()}  |  {plaintext}")
+                msg[i] = c ^ (BLOCK_SIZE - i)
+                iv = old
+                break
+            else:
+                print(f"{c:02x} {iv.hex()}  |  {plaintext}", end="\r")
+            iv = old
+    print(bytes(msg))
+    plaintext += msg.decode("utf-8")
+print(f"Final plaintext: {plaintext}")
 
-print(bytes.fromhex(ciphertext))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#print(ciphertext)
+#block_cnt = len(ciphertext) // 16
+#print(block_cnt)
+#
+#
+#blocks = splitArray(ciphertext, BLOCK_SIZE)
+#
+#a = blocks[-2]
+#b = blocks[-1]
+#
+#print(a.hex())
+#print(b.hex())
+#
+#print(a.hex())
+#
+#plain_block = bytearray.fromhex("00" * BLOCK_SIZE)
+#for i in range(0, BLOCK_SIZE):
+#    padding     = bytearray.fromhex("00" * BLOCK_SIZE)
+#    old_a = a.copy()
+#    for c in range(0, 255):
+#        sleep(0.25)
+#        plain_block[-(i + 1)] = c
+#        for j in range(0, i + 1):
+#            padding[-(j + 1)] = padding[-(j + 1)] ^ (i + 1)
+#        a = arrayXor(a, padding)
+#        a = arrayXor(a, plain_block)
+#
+#        new_ct = blocks[0] + blocks[1] + blocks[2] + blocks[3] + a + b
+#        
+#        print(f"Plain block: {plain_block.hex()}")
+#        print(f"Padding:     {padding.hex()}")
+#        print(f"A:           {a.hex()}")
+#        if probe(iv.hex(), ciphertext.hex()):
+#            print(f"{c} - match")
+#            break
+#        else:
+#            print(f"{c} - bad padding")
+#    a = old_a
+#
+#print(plain_block)
+#ciphertext[78] = 0xf9
+
+
+#ciphertext = bytearray.fromhex(ciphertext)
+#for c in reversed(range(0, 256)):
+#    old = ciphertext[79]
+#    ciphertext[79] = ciphertext[79] ^ c
+#    if probe(iv, ciphertext.hex()):
+#        print(f"{c}")
+#        break
+#    ciphertext[79] = old
